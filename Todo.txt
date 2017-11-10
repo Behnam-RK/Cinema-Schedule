@@ -1,0 +1,2 @@
+Adding search functionality.
+Adding list of movies and schedule of movies.
