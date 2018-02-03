@@ -1,3 +1,4 @@
+import sys
 import time
 import config
 from Bot import Bot
@@ -45,7 +46,8 @@ data = dict(
 if __name__ == '__main__':
     session = init_models(config.db_engine_url)
 
-    bot = Bot(config.token, session, data)
+    token = sys.argv[1]
+    bot = Bot(token, session, data)
     bot.run()
     print('Listening ...')
 

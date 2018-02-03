@@ -301,12 +301,13 @@ class Bot:
 
         screening_movies = cinema_info['screening_movies']
 
+        separator = emojis['heavy_minus_sign'] * 12
+
         for movie in screening_movies:
             title = 'فیلم: ' + movie['title']
             director = 'کارگردان: ' + movie['director']
             description = '\n{art_experience_emoji} هنر و تجربه'.format(art_experience_emoji=emojis['performing_arts']) if movie['art_experience'] else ''
 
-            separator = emojis['heavy_minus_sign'] * 12
             cinema_msg += '‏{separator}\n{title_emoji} {title}{description}\n{director_emoji} {director}\n'\
                             .format(separator=separator, 
                                     title_emoji=emojis['clapper_board'], 
@@ -461,14 +462,19 @@ class Bot:
             except Exception as error:
                 if str(error) == 'networking error':
                     reply = self.data['drafts']['error']
+                    self.bot.sendMessage(chat_id, reply)
 
                 elif str(error) == 'cinema does not exist':
+                    message.is_valid = 0
                     reply = self.data['drafts']['invalid_input']
+                    self.bot.sendMessage(chat_id, reply)
+                    reply = self.data['drafts']['usage']
+                    self.bot.sendMessage(chat_id, reply)
 
                 else:
                     reply = self.data['drafts']['error']
+                    self.bot.sendMessage(chat_id, reply)
 
-                self.bot.sendMessage(chat_id, reply)
                 message.replied = 1
 
                 tb = traceback.format_exc()
@@ -487,7 +493,13 @@ class Bot:
                 self.session.commit()
 
         else:
-            pass
+            reply = self.data['drafts']['invalid_input']
+            self.bot.sendMessage(chat_id, reply)
+            reply = self.data['drafts']['usage']
+            self.bot.sendMessage(chat_id, reply)
+            message.replied = 1
+            self.session.add(message)
+            self.session.commit()
 
 
     def on_callback_query(self, msg):
