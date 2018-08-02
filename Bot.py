@@ -3,11 +3,6 @@ from telepot import Bot as Telepot_Bot, glance, message_identifier,\
 from telepot.namedtuple import InlineKeyboardMarkup, InlineKeyboardButton
 from telepot.helper import Answerer
 from telepot.loop import MessageLoop
-from sqlalchemy.sql import func
-from datetime import datetime
-from threading import Timer
-from random import shuffle
-from math import sqrt
 from pprint import pprint
 from bs4 import BeautifulSoup
 import requests
@@ -138,58 +133,67 @@ class Bot:
         cinema_list_url = self.data['urls']['cinema_list']
         soup = self.get_soup(cinema_list_url)
 
-        cinemas_data = soup.find_all('div', class_='right')
+        cinemas_data = soup.find_all('a', class_='col--small-6 col--medium-3 col--large-4 col-vertical-align_top')
+        # pprint(cinemas_data)
+        # print(len(cinemas_data))
 
         for cinema_data in cinemas_data:
-            url = cinema_data.h2.a['href']
-            cid = re.search(r'cid=(\d*)&', url).group(1)
-            title = cinema_data.h2.a.string
-            address = cinema_data.contents[4]
-            phones = list()
-            for data in cinema_data.contents[5:]:
-                if data.find('و') and data.find('و') != -1:
-                    data_splitted_list = data.split('و')
-                    for d in data_splitted_list:
-                        digits = re.findall(r'[۰۱۲۳۴۵۶۷۸۹0-9]', str(d))
-                        if len(digits) > 6:
-                            cleaned_phone = re.sub(r'(\d)\s(\d)', '\g<1>-\g<2>', str(d))
-                            cleaned_phone = re.sub(r'[^۰۱۲۳۴۵۶۷۸۹0-9–\-]', '', str(cleaned_phone))
-                            cleaned_phone = cleaned_phone.replace('–', '-')
-                            dash_idx = cleaned_phone.find('-')
-                            if dash_idx != -1:
-                                if len(cleaned_phone[:dash_idx]) > len(cleaned_phone[dash_idx + 1:]):
-                                    cleaned_phone = cleaned_phone[dash_idx + 1:] + '-' + cleaned_phone[:dash_idx]
-                            phones.append(cleaned_phone)
+            url = cinema_data['href']
+            # url = self.data['urls']['cinema_prefix'] + url[2:]
+            # print(url)
+            cid = cinema_data['id']
+            title = cinema_data.find('span', class_='title').contents[0]
+            # print(title)
+            # title = cinema_data.h2.a.string
+            address = cinema_data.find('span', class_='address').contents[0]
+            # print(address)
+            # phones = list()
+            # for data in cinema_data.contents[5:]:
+            #     if data.find('و') and data.find('و') != -1:
+            #         data_splitted_list = data.split('و')
+            #         for d in data_splitted_list:
+            #             digits = re.findall(r'[۰۱۲۳۴۵۶۷۸۹0-9]', str(d))
+            #             if len(digits) > 6:
+            #                 cleaned_phone = re.sub(r'(\d)\s(\d)', '\g<1>-\g<2>', str(d))
+            #                 cleaned_phone = re.sub(r'[^۰۱۲۳۴۵۶۷۸۹0-9–\-]', '', str(cleaned_phone))
+            #                 cleaned_phone = cleaned_phone.replace('–', '-')
+            #                 dash_idx = cleaned_phone.find('-')
+            #                 if dash_idx != -1:
+            #                     if len(cleaned_phone[:dash_idx]) > len(cleaned_phone[dash_idx + 1:]):
+            #                         cleaned_phone = cleaned_phone[dash_idx + 1:] + '-' + cleaned_phone[:dash_idx]
+            #                 phones.append(cleaned_phone)
                 
-                else:
-                    digits = re.findall(r'[۰۱۲۳۴۵۶۷۸۹0-9]', str(data))
-                    if len(digits) > 6:
-                        cleaned_phone = re.sub(r'(\d)\s(\d)', '\g<1>-\g<2>', str(data))
-                        cleaned_phone = re.sub(r'[^۰۱۲۳۴۵۶۷۸۹0-9–\-]', '', str(cleaned_phone))
-                        cleaned_phone = cleaned_phone.replace('–', '-')
-                        dash_idx = cleaned_phone.find('-')
-                        if dash_idx != -1:
-                            if len(cleaned_phone[:dash_idx]) > len(cleaned_phone[dash_idx + 1:]):
-                                cleaned_phone = cleaned_phone[dash_idx + 1:] + '-' + cleaned_phone[:dash_idx]
-                        phones.append(cleaned_phone)
+            #     else:
+            #         digits = re.findall(r'[۰۱۲۳۴۵۶۷۸۹0-9]', str(data))
+            #         if len(digits) > 6:
+            #             cleaned_phone = re.sub(r'(\d)\s(\d)', '\g<1>-\g<2>', str(data))
+            #             cleaned_phone = re.sub(r'[^۰۱۲۳۴۵۶۷۸۹0-9–\-]', '', str(cleaned_phone))
+            #             cleaned_phone = cleaned_phone.replace('–', '-')
+            #             dash_idx = cleaned_phone.find('-')
+            #             if dash_idx != -1:
+            #                 if len(cleaned_phone[:dash_idx]) > len(cleaned_phone[dash_idx + 1:]):
+            #                     cleaned_phone = cleaned_phone[dash_idx + 1:] + '-' + cleaned_phone[:dash_idx]
+            #             phones.append(cleaned_phone)
 
-            phone = '\n‏'.join(phones)
+            # phone = '\n‏'.join(phones)
             city = re.search(r'^(.*?)\s-', address).group(1)
+            # print(city)
             url = url.replace('./', self.data['urls']['cinema_prefix'])
             url = re.sub(r'&t=.*$', '', url)
+            # print(url)
             if re.search(req_city, city):
                 cinema = self.session.query(Cinema).filter(Cinema.cid == cid).first()
 
                 if cinema:
-                    if cinema.title != title or cinema.address != address or cinema.phone != phone or cinema.city != city:
+                    if cinema.title != title or cinema.address != address or cinema.city != city:
                         cinema.title = title
                         cinema.address = address
-                        cinema.phone = phone
+                        # cinema.phone = phone
                         cinema.city = city
                         self.session.add(cinema)
 
                 else:
-                    cinema = Cinema(cid=cid, title=title, city=city, address=address, phone=phone, url=url)
+                    cinema = Cinema(cid=cid, title=title, city=city, address=address, url=url)
                     self.session.add(cinema)
 
         self.session.commit()
@@ -238,12 +242,14 @@ class Bot:
         cinema_info = dict()
 
         cinema_title = soup.find(class_='cinema-title').text.strip()
+        # print(cinema_title)
 
         cinema_info['cinema_title'] = cinema_title
         cinema_info['cid'] = cid
         cinema_info['url'] = cinema.url
         cinema_info['address'] = cinema.address
-        cinema_info['phone'] = cinema.phone
+        # print(cinema.phone)
+        cinema_info['phone'] = cinema.phone if cinema_info else ''
         cinema_info['screening_movies'] = list()
 
         movies = soup.find_all('div', class_='showtime--items_step')
@@ -251,8 +257,14 @@ class Bot:
         for movie in movies:
             movie_dic = dict()
 
-            meta = movie.contents[1].find('div', class_='name').span.text.strip()
-            title, director = re.search(r"^(.*?)\s\s+(.*?)$", meta, flags=re.DOTALL).group(1, 2)
+            # meta = movie.contents[1].find('div', class_='figure-contain').text.strip()
+            title = movie.contents[1].find(class_='movie__title').contents[0]
+            # print(title)
+            director = movie.contents[1].find(class_='movie__subtitle').text.strip()
+            # print(director)
+
+            # pprint(meta)
+            # title, director = re.search(r"^(.*?)()\s\s+(.*?)$", meta, flags=re.DOTALL).group(1, 2)
             art_experience = movie.contents[1].find('span', {'data-ballon': 'هنر و تجربه'})
 
             movie_dic['title'] = title.strip()
@@ -295,7 +307,7 @@ class Bot:
 
         cinema_title = cinema_info['cinema_title']
 
-        cinema_msg = '{cinema_emoji}برنامه روز های آتی {cinema_title} به شرح زیر است:\n\n'\
+        cinema_msg = '{cinema_emoji} برنامه روز های آتی {cinema_title} به شرح زیر است:\n\n'\
                         .format(cinema_emoji=emojis['white_medium_star'], 
                                 cinema_title=cinema_title)
 
@@ -341,8 +353,9 @@ class Bot:
 
             cinema_msg += '\n'
 
-        address = cinema_info['address'] if cinema_info['address'] != '' else 'ثبت نشده!'
-        phone = cinema_info['phone'] if cinema_info['phone'] != '' else 'ثبت نشده!'
+        address = cinema_info['address'] if cinema_info['address'] else 'ثبت نشده!'
+        phone = ''
+        phone = cinema_info['phone'] if cinema_info['phone'] else 'ثبت نشده!'
 
         cinema_msg += '‏{separator}\n{address_emoji} آدرس: \n‏{address}\n{phone_emoji} تلفن: \n‏{phone}\n'\
                         .format(separator=separator, 

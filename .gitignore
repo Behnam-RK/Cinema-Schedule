@@ -1,3 +1,5 @@
 __pycache__
 *.pyc
+.vscode
 Cinema_Schedule.sqlite3
+env
